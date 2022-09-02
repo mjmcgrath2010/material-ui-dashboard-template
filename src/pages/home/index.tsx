@@ -66,7 +66,7 @@ const Home = (props: Props) => {
           marginTop: "20vh",
         }}
       >
-        <Typography variant="h3">Promptli</Typography>
+        <Typography variant="h3">Your App</Typography>
         <Typography variant="h5">Coming soon</Typography>
       </Box>
     </Box>
