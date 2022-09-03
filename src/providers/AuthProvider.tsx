@@ -7,6 +7,8 @@ import { useMutation, useQuery } from "@apollo/client";
 import { LOGIN, SIGN_UP } from "mutations";
 import { ME } from "queries";
 
+const TOKEN_NAME: string = "access_token";
+
 interface AuthProviderProps {
   children: ReactElement | ReactElement[] | ReactNode | ReactNode[];
 }
@@ -36,7 +38,11 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   const navigate = useNavigate();
   const [loginRequest, { loading: loginLoading }] = useMutation(LOGIN);
   const [signupRequest, { loading: signupLoading }] = useMutation(SIGN_UP);
-  const { data: userData, loading: userDataLoading } = useQuery(ME);
+  const {
+    data: userData,
+    loading: userDataLoading,
+    refetch: refetchUserData,
+  } = useQuery(ME);
 
   const { email, name, loading, loggedIn } = state;
 
@@ -60,7 +66,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     }));
 
   const logout = () => {
-    localStorage.removeItem("promptli_access_token");
+    localStorage.removeItem(TOKEN_NAME);
     setState({
       token: "",
       loggedIn: false,
@@ -85,7 +91,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       },
     } = response;
 
-    localStorage.setItem("promptli_access_token", token);
+    localStorage.setItem(TOKEN_NAME, token);
 
     updateState({
       token,
@@ -110,7 +116,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       },
     } = response;
 
-    localStorage.setItem("promptli_access_token", token);
+    localStorage.setItem(TOKEN_NAME, token);
 
     updateState({
       loggedIn: true,
@@ -130,10 +136,16 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [signupLoading, loginLoading, userDataLoading]);
 
   useEffect(() => {
-    if (!localStorage.getItem("promptli_access_token")) {
+    if (!localStorage.getItem(TOKEN_NAME)) {
       updateState({ loggedIn: false, loading: false });
     }
   }, []);
+
+  if (!state.email && userData?.me?.email) {
+    updateState(userData.me);
+  } else if (!state.email && localStorage.getItem(TOKEN_NAME)) {
+    refetchUserData().then(({ data: { me } }) => updateState(me));
+  }
 
   return (
     <AuthContext.Provider
